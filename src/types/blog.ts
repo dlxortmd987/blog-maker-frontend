@@ -1,6 +1,12 @@
+export enum ContentType {
+    TRAVLE,
+    RESTAURANT,
+    PROGRAMMING
+}
+
 export interface BlogRequest {
     draft: string;
-    type: 'detailed' | 'creative' | 'concise';
+    contentType: ContentType;
 }
 
 export interface BlogResponse {

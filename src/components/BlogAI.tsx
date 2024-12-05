@@ -1,15 +1,17 @@
 "use client"
 
-import React, { useState, useEffect } from 'react';
-import { Loader2, Type, Wand2, FileText, RotateCcw, Copy, Save } from 'lucide-react';
+import React, {useState, useEffect} from 'react';
+// @ts-ignore
+import {Loader2, Type, Wand2, FileText, RotateCcw, Copy, Save} from 'lucide-react';
 import {generateBlog} from "@/services/blogServices";
+import {ContentType} from '@/types/blog';
 
 const BlogAI = () => {
     const [draft, setDraft] = useState('');
     const [expandedText, setExpandedText] = useState('');
     const [isGenerating, setIsGenerating] = useState(false);
     const [typingText, setTypingText] = useState('');
-    const [expandType, setExpandType] = useState('detailed');
+    const [contentType, setContentType] = useState<ContentType>();
     const [wordCount, setWordCount] = useState(0);
     const [error, setError] = useState<string | null>(null);  // 에러 상태 추가
 
@@ -39,7 +41,7 @@ const BlogAI = () => {
     }, [expandedText, isGenerating]);
 
     const handleGenerate = async () => {
-        if (!draft.trim()) return;
+        if (!draft.trim() || !contentType) return;
 
         setIsGenerating(true);
         setTypingText('');
@@ -48,7 +50,7 @@ const BlogAI = () => {
         try {
             const response = await generateBlog({
                 draft,
-                type: expandType,
+                contentType,
             });
 
             setExpandedText(response.text);
@@ -60,11 +62,116 @@ const BlogAI = () => {
         }
     };
 
+    const formatBlogContent = (content: string) => {
+        const sections = content.split('\n\n');
+
+        return sections.map((section, idx) => {
+            // Headers (h1-h6)
+            if (section.match(/^#{1,6}\s/)) {
+                const level = (section.match(/^#+/) || [''])[0].length as number;
+                const text = section.replace(/^#+\s/, '');
+                const sizes: Record<number, string> = {
+                    1: 'text-4xl',
+                    2: 'text-3xl',
+                    3: 'text-2xl',
+                    4: 'text-xl',
+                    5: 'text-lg',
+                    6: 'text-base'
+                };
+                return React.createElement(`h${level}`, {
+                    key: idx,
+                    className: `${sizes[level]} font-bold text-gray-800 mt-6 mb-3`
+                }, text);
+            }
+
+            // Blockquotes
+            if (section.startsWith('>')) {
+                return (
+                    <blockquote key={idx} className="pl-4 border-l-4 border-gray-300 text-gray-600 italic my-4">
+                        {section.replace(/^>\s?/gm, '')}
+                    </blockquote>
+                );
+            }
+
+            // Code blocks
+            if (section.startsWith('```')) {
+                const code = section.replace(/```(\w+)?\n?/g, '');
+                return (
+                    <pre key={idx} className="bg-gray-50 rounded-lg p-4 overflow-x-auto my-4">
+                    <code className="text-sm text-gray-800">{code}</code>
+                </pre>
+                );
+            }
+
+            // Lists
+            if (section.match(/^(\d+\.|[-*+])\s/m)) {
+                const items = section.split('\n').filter(item => item.trim());
+                const isOrdered = /^\d+\./.test(items[0]);
+                const ListComponent = isOrdered ? 'ol' : 'ul';
+                const listClass = isOrdered ? 'list-decimal' : 'list-disc';
+
+                return (
+                    <ListComponent key={idx} className={`${listClass} pl-6 my-4 space-y-2`}>
+                        {items.map((item, itemIdx) => (
+                            <li key={itemIdx} className="text-gray-700">
+                                {item.replace(/^(\d+\.|[-*+])\s/, '')}
+                            </li>
+                        ))}
+                    </ListComponent>
+                );
+            }
+
+            // Bold, italic, inline code, links
+            if (section.match(/[*_`\[\]]/)) {
+                const formattedText = section.split(/(\*\*.*?\*\*|\*.*?\*|`.*?`|\[.*?\]\(.*?\))/g).map((part, partIdx) => {
+                    // Bold text (handles **text**)
+                    const boldMatch = part.match(/^\*\*([^*]+)\*\*$/);
+                    if (boldMatch) {
+                        return <strong key={partIdx} className="font-bold">{boldMatch[1]}</strong>;
+                    }
+
+                    // Rest of the conditions remain the same
+                    if (part.match(/^\*(.*?)\*$/)) {
+                        return <em key={partIdx} className="italic">{part.replace(/\*/g, '')}</em>;
+                    }
+                    if (part.match(/^`(.*?)`$/)) {
+                        return <code key={partIdx} className="bg-gray-100 px-1 rounded">{part.replace(/`/g, '')}</code>;
+                    }
+                    if (part.match(/^\[(.*?)\]\((.*?)\)$/)) {
+                        const [, text, url] = part.match(/^\[(.*?)\]\((.*?)\)$/) || [];
+                        return <a key={partIdx} href={url} className="text-blue-600 hover:underline">{text}</a>;
+                    }
+                    return part;
+                });
+                return <p key={idx} className="text-gray-700 leading-relaxed mb-4">{formattedText}</p>;
+            }
+
+            // Hashtags
+            if (section.includes('#')) {
+                const tags = section.match(/#[\wㄱ-ㅎㅏ-ㅣ가-힣]+/g) || [];
+                const tagElements = tags.map((tag, tagIdx) => (
+                    <span key={tagIdx} className="inline-block bg-blue-100 text-blue-600 rounded-full px-3 py-1 text-sm mr-2 mb-2">
+                    {tag}
+                </span>
+                ));
+                return <div key={idx} className="my-4">{tagElements}</div>;
+            }
+
+            // Regular paragraphs
+            return (
+                <p key={idx} className="text-gray-700 leading-relaxed mb-4">
+                    {section}
+                </p>
+            );
+        });
+    };
+
     return (
         <div className="min-h-screen bg-gradient-to-b from-blue-50 to-white p-6">
             {/* 헤더 */}
             <header className="max-w-6xl mx-auto mb-6 flex items-center gap-3">
-                <div className="w-10 h-10 rounded-xl bg-gradient-to-r from-blue-500 to-purple-500 flex items-center justify-center shadow-lg">
+                <div
+                    className="w-10 h-10 rounded-xl bg-gradient-to-r from-blue-500 to-purple-500 flex items-center justify-center shadow-lg">
                     <span className="text-white font-bold text-lg">b</span>
                 </div>
                 <div className="flex items-baseline gap-1">
@@ -93,37 +200,37 @@ const BlogAI = () => {
                     {/* 확장 스타일 선택 */}
                     <div className="mb-4 grid grid-cols-3 gap-2">
                         <button
-                            onClick={() => setExpandType('detailed')}
+                            onClick={() => setContentType(ContentType.TRAVLE)}
                             className={`p-3 rounded-xl flex flex-col items-center gap-2 transition-all border ${
-                                expandType === 'detailed'
+                                contentType === ContentType.TRAVLE
                                     ? 'bg-blue-50 text-blue-600 border-blue-200'
                                     : 'bg-gray-50 text-gray-600 hover:bg-gray-100 border-transparent'
                             }`}
                         >
-                            <Type className="w-5 h-5" />
-                            <span className="text-sm font-medium">상세 설명</span>
+                            <Type className="w-5 h-5"/>
+                            <span className="text-sm font-medium">여행</span>
                         </button>
                         <button
-                            onClick={() => setExpandType('creative')}
+                            onClick={() => setContentType(ContentType.RESTAURANT)}
                             className={`p-3 rounded-xl flex flex-col items-center gap-2 transition-all border ${
-                                expandType === 'creative'
+                                contentType === ContentType.RESTAURANT
                                     ? 'bg-blue-50 text-blue-600 border-blue-200'
                                     : 'bg-gray-50 text-gray-600 hover:bg-gray-100 border-transparent'
                             }`}
                         >
-                            <Wand2 className="w-5 h-5" />
-                            <span className="text-sm font-medium">창의적 확장</span>
+                            <Wand2 className="w-5 h-5"/>
+                            <span className="text-sm font-medium">맛집</span>
                         </button>
                         <button
-                            onClick={() => setExpandType('concise')}
+                            onClick={() => setContentType(ContentType.PROGRAMMING)}
                             className={`p-3 rounded-xl flex flex-col items-center gap-2 transition-all border ${
-                                expandType === 'concise'
+                                contentType === ContentType.PROGRAMMING
                                     ? 'bg-blue-50 text-blue-600 border-blue-200'
                                     : 'bg-gray-50 text-gray-600 hover:bg-gray-100 border-transparent'
                             }`}
                         >
-                            <FileText className="w-5 h-5" />
-                            <span className="text-sm font-medium">간단 요약</span>
+                            <FileText className="w-5 h-5"/>
+                            <span className="text-sm font-medium">개발</span>
                         </button>
                     </div>
 
@@ -147,21 +254,22 @@ const BlogAI = () => {
                                 onClick={() => setDraft('')}
                                 className="flex items-center justify-center gap-2 px-4 py-2 rounded-lg hover:bg-gray-100 text-gray-700 border border-gray-200"
                             >
-                                <RotateCcw className="w-4 h-4" />
+                                <RotateCcw className="w-4 h-4"/>
                                 <span>초기화</span>
                             </button>
                             <button
                                 onClick={() => navigator.clipboard.writeText(draft)}
                                 className="flex items-center justify-center gap-2 px-4 py-2 rounded-lg bg-blue-50 hover:bg-blue-100 text-blue-600 border border-blue-200"
                             >
-                                <Copy className="w-4 h-4" />
+                                <Copy className="w-4 h-4"/>
                                 <span>복사하기</span>
                             </button>
                             <button
-                                onClick={() => {/* 저장 로직 */}}
+                                onClick={() => {/* 저장 로직 */
+                                }}
                                 className="flex items-center justify-center gap-2 px-4 py-2 rounded-lg bg-blue-50 hover:bg-blue-100 text-blue-600 border border-blue-200"
                             >
-                                <Save className="w-4 h-4" />
+                                <Save className="w-4 h-4"/>
                                 <span>저장하기</span>
                             </button>
                         </div>
@@ -173,7 +281,7 @@ const BlogAI = () => {
                         >
                             {isGenerating ? (
                                 <div className="flex items-center justify-center gap-2">
-                                    <Loader2 className="w-5 h-5 animate-spin" />
+                                    <Loader2 className="w-5 h-5 animate-spin"/>
                                     <span>생성 중...</span>
                                 </div>
                             ) : (
@@ -201,33 +309,41 @@ const BlogAI = () => {
                         </p>
                     </div>
 
-                    <div className="h-[calc(100vh-400px)] min-h-[300px] overflow-auto p-4 rounded-xl bg-gradient-to-b from-blue-50 to-white border border-blue-100">
+                    <div
+                        className="h-[calc(100vh-400px)] min-h-[300px] overflow-auto p-4 rounded-xl bg-gradient-to-b from-blue-50 to-white border border-blue-100">
                         {isGenerating ? (
                             <div className="flex items-center justify-center h-full">
                                 <div className="flex items-center gap-2 text-blue-600">
-                                    <Loader2 className="w-5 h-5 animate-spin" />
+                                    <Loader2 className="w-5 h-5 animate-spin"/>
                                     <span>블로그 글을 생성하고 있습니다...</span>
                                 </div>
                             </div>
                         ) : typingText ? (
-                            <>
-                                <div className="prose prose-sm">
-                                    <div className="bg-blue-50 p-3 rounded-lg mb-4 border border-blue-200">
-                                        <strong className="text-blue-700">초안</strong>
-                                        <p className="mt-1">{draft}</p>
-                                    </div>
-                                    <div className="bg-white p-3 rounded-lg border border-blue-100">
-                                        <strong className="text-blue-700">완성된 블로그</strong>
-                                        <p className="mt-1 leading-relaxed">{typingText}</p>
-                                    </div>
+                            <div className="p-6">
+                                <div className="bg-white border border-gray-100 rounded-lg p-6 shadow-sm">
+                                    <h3 className="text-blue-700 font-medium mb-4">생성된 블로그 글</h3>
+                                    <article className="space-y-4">
+                                        {formatBlogContent(typingText)}
+                                    </article>
                                 </div>
-                                <button
-                                    onClick={handleGenerate}
-                                    className="mt-4 px-6 py-3 bg-blue-500 hover:bg-blue-600 text-white rounded-xl font-medium transition-all duration-200 hover:shadow-md active:scale-95"
-                                >
-                                    다시 생성하기
-                                </button>
-                            </>
+
+                                <div className="mt-6 flex gap-3">
+                                    <button
+                                        onClick={() => navigator.clipboard.writeText(typingText)}
+                                        className="flex items-center gap-2 px-4 py-2 rounded-lg bg-blue-50 hover:bg-blue-100 text-blue-600"
+                                    >
+                                        <Copy className="w-4 h-4" />
+                                        <span>복사하기</span>
+                                    </button>
+                                    <button
+                                        onClick={handleGenerate}
+                                        className="flex items-center gap-2 px-4 py-2 rounded-lg bg-blue-600 hover:bg-blue-700 text-white"
+                                    >
+                                        <RotateCcw className="w-4 h-4" />
+                                        <span>다시 생성하기</span>
+                                    </button>
+                                </div>
+                            </div>
                         ) : (
                             <div className="flex flex-col items-center justify-center h-full text-gray-500 gap-3">
                                 <div className="w-12 h-12 rounded-xl bg-blue-100 flex items-center justify-center">

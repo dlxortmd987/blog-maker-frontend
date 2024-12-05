@@ -3,7 +3,7 @@ import { BlogRequest, BlogResponse } from '@/types/blog';
 
 const API_BASE_URL = process.env.NEXT_PUBLIC_API_URL || 'http://localhost:8080';
 
-export const generateBlog = async (request: { draft: string; type: string }): Promise<BlogResponse> => {
+export const generateBlog = async (request: BlogRequest): Promise<BlogResponse> => {
     try {
         const response = await fetch(`${API_BASE_URL}/api/blog/generate`, {
             method: 'POST',
