@@ -63,6 +63,7 @@ const BlogAI = () => {
     };
 
     const formatBlogContent = (content: string) => {
+        content = content.trim();
         const sections = content.split('\n\n');
 
         return sections.map((section, idx) => {
