@@ -123,7 +123,7 @@ const BlogAI = () => {
 
             // Bold, italic, inline code, links
             if (section.match(/[*_`\[\]]/)) {
-                const formattedText = section.split(/(\*\*.*?\*\*|\*.*?\*|`.*?`|\[.*?\]\(.*?\))/g).map((part, partIdx) => {
+                const formattedText = section.split(/(\*\*.*?\*\*|\*.*?\*|`.*?`|\[.*?]\(.*?\))/g).map((part, partIdx) => {
                     // Bold text (handles **text**)
                     const boldMatch = part.match(/^\*\*([^*]+)\*\*$/);
                     if (boldMatch) {
@@ -137,8 +137,8 @@ const BlogAI = () => {
                     if (part.match(/^`(.*?)`$/)) {
                         return <code key={partIdx} className="bg-gray-100 px-1 rounded">{part.replace(/`/g, '')}</code>;
                     }
-                    if (part.match(/^\[(.*?)\]\((.*?)\)$/)) {
-                        const [, text, url] = part.match(/^\[(.*?)\]\((.*?)\)$/) || [];
+                    if (part.match(/^\[(.*?)]\((.*?)\)$/)) {
+                        const [, text, url] = part.match(/^\[(.*?)]\((.*?)\)$/) || [];
                         return <a key={partIdx} href={url} className="text-blue-600 hover:underline">{text}</a>;
                     }
                     return part;
