@@ -1,7 +1,7 @@
 "use client"
 
 import React, {useState, useEffect} from 'react';
-// @ts-ignore
+// @ts-expect-error
 import {Loader2, Type, Wand2, FileText, RotateCcw, Copy, Save} from 'lucide-react';
 import {generateBlog} from "@/services/blogServices";
 import {ContentType} from '@/types/blog';
@@ -350,7 +350,7 @@ const BlogAI = () => {
                                 <div className="w-12 h-12 rounded-xl bg-blue-100 flex items-center justify-center">
                                     <span className="text-blue-500 font-bold text-xl">b</span>
                                 </div>
-                                <p>초안을 작성하고 '블로그 글 확장하기' 버튼을 클릭해주세요.</p>
+                                <p>초안을 작성하고 &apos;블로그 글 확장하기&apos; 버튼을 클릭해주세요.</p>
                             </div>
                         )}
                     </div>
