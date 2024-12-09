@@ -1,7 +1,6 @@
 "use client"
 
 import React, {useState, useEffect} from 'react';
-// @ts-expect-error
 import {Loader2, Type, Wand2, FileText, RotateCcw, Copy, Save} from 'lucide-react';
 import {generateBlog} from "@/services/blogServices";
 import {ContentType} from '@/types/blog';
