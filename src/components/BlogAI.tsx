@@ -1,7 +1,7 @@
 "use client"
 
-import React, {useState, useEffect} from 'react';
-import {Loader2, Type, Wand2, FileText, RotateCcw, Copy, Save} from 'lucide-react';
+import React, {useEffect, useState} from 'react';
+import {Copy, FileText, Loader2, RotateCcw, Save, Wand2} from 'lucide-react';
 import {generateBlog} from "@/services/blogServices";
 import {ContentType} from '@/types/blog';
 
@@ -10,7 +10,7 @@ const BlogAI = () => {
     const [expandedText, setExpandedText] = useState('');
     const [isGenerating, setIsGenerating] = useState(false);
     const [typingText, setTypingText] = useState('');
-    const [contentType, setContentType] = useState<ContentType>();
+    const [contentType, setContentType] = useState<ContentType>(ContentType.RESTAURANT);
     const [wordCount, setWordCount] = useState(0);
     const [error, setError] = useState<string | null>(null);  // 에러 상태 추가
 
@@ -199,17 +199,6 @@ const BlogAI = () => {
 
                     {/* 확장 스타일 선택 */}
                     <div className="mb-4 grid grid-cols-3 gap-2">
-                        <button
-                            onClick={() => setContentType(ContentType.TRAVLE)}
-                            className={`p-3 rounded-xl flex flex-col items-center gap-2 transition-all border ${
-                                contentType === ContentType.TRAVLE
-                                    ? 'bg-blue-50 text-blue-600 border-blue-200'
-                                    : 'bg-gray-50 text-gray-600 hover:bg-gray-100 border-transparent'
-                            }`}
-                        >
-                            <Type className="w-5 h-5"/>
-                            <span className="text-sm font-medium">여행</span>
-                        </button>
                         <button
                             onClick={() => setContentType(ContentType.RESTAURANT)}
                             className={`p-3 rounded-xl flex flex-col items-center gap-2 transition-all border ${
