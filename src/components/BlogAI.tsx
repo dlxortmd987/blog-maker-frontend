@@ -1,7 +1,7 @@
 "use client"
 
 import React, {useEffect, useState} from 'react';
-import {Copy, FileText, Loader2, RotateCcw, Save, Wand2} from 'lucide-react';
+import {Loader2, Wand2, FileText, RotateCcw, Copy, Save} from 'lucide-react';
 import {generateBlog} from "@/services/blogServices";
 import {ContentType} from '@/types/blog';
 
@@ -10,7 +10,7 @@ const BlogAI = () => {
     const [expandedText, setExpandedText] = useState('');
     const [isGenerating, setIsGenerating] = useState(false);
     const [typingText, setTypingText] = useState('');
-    const [contentType, setContentType] = useState<ContentType>(ContentType.RESTAURANT);
+    const [contentType, setContentType] = useState<ContentType>();
     const [wordCount, setWordCount] = useState(0);
     const [error, setError] = useState<string | null>(null);  // 에러 상태 추가
 
@@ -40,16 +40,19 @@ const BlogAI = () => {
     }, [expandedText, isGenerating]);
 
     const handleGenerate = async () => {
-        if (!draft.trim() || !contentType) return;
+        const trimmedDraft: string = draft.trim();
+
+        if (!trimmedDraft || contentType === undefined) return;
 
         setIsGenerating(true);
         setTypingText('');
         setError(null); // 에러 상태 초기화
 
+
         try {
             const response = await generateBlog({
-                draft,
-                contentType,
+                draft: trimmedDraft,
+                contentType: contentType,
             });
 
             setExpandedText(response.text);
